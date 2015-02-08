@@ -1,0 +1,5 @@
+tmp-git-deployment-staging/
+target/
+.classpath
+.settings/
+*.*~
