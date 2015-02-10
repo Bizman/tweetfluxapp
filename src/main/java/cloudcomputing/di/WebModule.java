@@ -17,9 +17,9 @@ public class WebModule extends ServletModule {
 		
 		serve("/services/api/v1/*").with(GuiceContainer.class);
 		
-		//bind(RootResource.class);
+		bind(RootResource.class);
 		
-		//bind(SNSResource.class);
+		bind(SNSResource.class);
 
         bind(SampleSQSDResource.class);
 	}

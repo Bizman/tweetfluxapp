@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,6 +54,13 @@ public class RootResource extends BaseResource {
 		return result;
 	}
 	
+	@Path("/hashtag/")
+	@GET
+	public String getHashtag(@Context HttpHeaders httpHeaders) {
+	
+		return "coucou olivier";
+	}
+
 	@Path("/remote")
 	@GET
 	public String getRemoteAddress(@Context HttpServletRequest request) {
@@ -63,5 +71,15 @@ public class RootResource extends BaseResource {
 	public HealthResource getHealthResource() throws Exception {
 		return super.createResource(HealthResource.class);
 	}
+	
+	@Path("/carto/{coordinate}/{hashtag}")
+	@GET
+	public String getCartographie(){return null;}
+	
+	@Path("/ddd")
+	@DELETE
+	public void deletCartographie(){}
+	
+
 
 }
