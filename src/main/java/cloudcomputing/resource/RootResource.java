@@ -58,7 +58,7 @@ public class RootResource extends BaseResource {
 	@GET
 	public String getHashtag(@Context HttpHeaders httpHeaders) {
 	
-		return "coucou tout le monde ";
+		return "coucou tout le monde Olivier !";
 	}
 
 	@Path("/remote")
