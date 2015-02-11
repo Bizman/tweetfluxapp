@@ -1,9 +1,6 @@
 package cloudcomputing.resource;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -16,14 +13,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -64,6 +53,13 @@ public class RootResource extends BaseResource {
 
 		return result;
 	}
+	
+	@Path("/hashtag")
+	@GET
+	public String getHashtag(@Context HttpHeaders httpHeaders) {
+	
+		return "coucou tout le monde ";
+	}
 
 	@Path("/remote")
 	@GET
@@ -74,39 +70,6 @@ public class RootResource extends BaseResource {
 	@Path("/health")
 	public HealthResource getHealthResource() throws Exception {
 		return super.createResource(HealthResource.class);
-	}
-	
-	@Path("/hashtag/")
-	@GET
-	public String getHashtag(@Context HttpHeaders httpHeaders) {
-		return "coucou olivier";
-	}
-	
-	@Path("/number/")
-	@GET
-	public String getNumberTweet(@Context HttpHeaders httpHeaders) {
-		int couter = 0;
-		
-		String tweetDataTableName = "tweetData";
-		AmazonDynamoDBClient dbClient = new AmazonDynamoDBClient(new ProfileCredentialsProvider());
-		dbClient.setRegion(Regions.EU_WEST_1);
-		DynamoDB dynamoDB = new DynamoDB(dbClient);
-		Table table = dynamoDB.getTable(tweetDataTableName);
-    	   
-        Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
-        expressionAttributeValues.put(":Id", 1);
-		
-    	ItemCollection<ScanOutcome> items = table.scan(
-    		"Id = :id",
-    	    null, expressionAttributeValues);
-        
-        System.out.println("Scan of " + tweetDataTableName + " for items");
-      	Iterator<Item> iterator = items.iterator();
-		while (iterator.hasNext()) {
-    		couter++;
-    	}
-    	
-    	return "Nombre de tweet dans la base : "+couter;
 	}
 	
 	@Path("/carto/{coordinate}/{hashtag}")
