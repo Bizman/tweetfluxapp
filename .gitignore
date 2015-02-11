@@ -1,4 +1,5 @@
 tmp-git-deployment-staging/
 target/**
 .project
+pom.xml
 *.*~
