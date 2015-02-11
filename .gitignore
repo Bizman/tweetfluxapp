@@ -1,4 +1,4 @@
 tmp-git-deployment-staging/
-*/target/**
+target/**
 .project
 *.*~
