@@ -1,7 +1,5 @@
 tmp-git-deployment-staging/
 *.*~
+.*
 target/
 .settings/
-.classpath
-settings.xml
-settings-security.xml
