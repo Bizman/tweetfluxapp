@@ -79,7 +79,6 @@ public class RootResource extends BaseResource {
 	@Path("/hashtag/")
 	@GET
 	public String getHashtag(@Context HttpHeaders httpHeaders) {
-		
 		return "coucou olivier";
 	}
 	

@@ -2,3 +2,4 @@ tmp-git-deployment-staging/
 *.*~
 .*
 .settings/
+/target/
