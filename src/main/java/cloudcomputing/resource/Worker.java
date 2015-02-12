@@ -1,9 +1,7 @@
 package cloudcomputing.resource;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-
 import java.util.HashSet;
-
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -50,5 +48,38 @@ public class Worker {
 			System.err.println("Failed to create item in" + this.tweetDataTableName);
 			System.err.println(e.getMessage());
 		}	
+	}
+	
+	public Tweet treatment(String msg)
+	{
+		Tweet tweet = new Tweet();
+		msg = msg.substring(1, msg.length()-3);
+
+		String[] msgSplit = msg.split(",");
+		
+		for(int i = 0; i < msgSplit.length; i++)
+		{
+			String[] infoSplit = msgSplit[i].split(":");
+			String text = "";
+			for(int k = 1; k < infoSplit.length; k++)
+			{
+				text += infoSplit[k] + " ";
+			}
+			if(infoSplit[0].equals("\"created_at\"") && tweet.getDate().equals("")) {
+				tweet.setDate(text);
+			} else if (infoSplit[0].equals("\"id\"") && tweet.getIdTweet().equals("")) {
+				tweet.setIdTweet(text);
+			} else if (infoSplit[0].equals("\"user\"") && tweet.getIdUser().equals("")) {
+				tweet.setIdUser(text.substring(6));
+			} else if (infoSplit[0].equals("\"lang\"") && tweet.getLang().equals("")) {
+				tweet.setLang(text);
+			} else if (infoSplit[0].equals("\"coordinates\"") && tweet.getCoordinates().equals("")) {
+				tweet.setCoordinates(text);
+			} else if (infoSplit[0].equals("\"text\"") && tweet.getText().equals("")) {
+				tweet.setText(text);
+			}
+		}
+		System.out.println(tweet.toString());
+		return tweet;
 	}
 }

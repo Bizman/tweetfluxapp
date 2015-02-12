@@ -60,8 +60,7 @@ public class main {
 				worker.loadSampleProducts(tweet);
 		    } catch (AmazonServiceException ase) {
 		    	System.err.println("Data load script failed.");
-		    }			
-			//profit(tweet);
+		    }
 		}
 		hosebirdClient.stop();
 	}
