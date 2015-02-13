@@ -27,6 +27,9 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -94,7 +97,7 @@ public class RootResource extends BaseResource {
 	
 	@Path("/start")
 	@GET
-	public String getStart(@Context HttpServletRequest request) {
+	public void getStart(@Context HttpServletRequest request) {
 		Worker worker = new Worker();
 		
 		BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
@@ -134,12 +137,10 @@ public class RootResource extends BaseResource {
 			try {
 				System.out.println("Ajout du tweet en base");
 				worker.loadSampleProducts(tweet);
-				return "Ajout du tweet en base";
 		    } catch (AmazonServiceException ase) {
 		    	System.err.println("Data load script failed.");
 		    }
 		}
-		return null;
 	}
 	
 	@Path("/number")
@@ -152,21 +153,16 @@ public class RootResource extends BaseResource {
 		dbClient.setRegion(Regions.EU_WEST_1);
 		DynamoDB dynamoDB = new DynamoDB(dbClient);
 		Table table = dynamoDB.getTable(tweetDataTableName);
-    	   
-        Map<String, Object> expressionAttributeValues = new HashMap<String, Object>();
-        expressionAttributeValues.put(":Id", 1);
+
+		ScanRequest scanRequest = new ScanRequest()
+		    .withTableName(tweetDataTableName);
+
+//		ScanResult result = dbClient.scan(scanRequest);
+//		for (Map<String, AttributeValue> item : result.getItems()){
+//			counter++;
+//		}
 		
-    	ItemCollection<ScanOutcome> items = table.scan(
-    		"Id = :id",
-    	    null, expressionAttributeValues);
-        
-        System.out.println("Scan of " + tweetDataTableName + " for items");
-      	Iterator<Item> iterator = items.iterator();
-		while (iterator.hasNext()) {
-			counter++;
-    	}
-    	
-    	return "Nombre de tweet dans la base : "+counter;
+    	return table.getTableName()+ " "+counter;
 	}
 	
 	@Path("/health")
