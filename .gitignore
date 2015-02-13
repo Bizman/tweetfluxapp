@@ -6,3 +6,5 @@ pom.xml
 /target
 .classpath
 .settings/
+.idea/
+*.iml
