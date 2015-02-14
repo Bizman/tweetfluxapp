@@ -85,7 +85,6 @@ public class RootResource extends BaseResource {
 	@Path("/hashtag")
 	@GET
 	public String getHashtag(@Context HttpHeaders httpHeaders) {
-	
 		return "coucou tout le monde Olivier/Eric !";
 	}
 
@@ -95,7 +94,7 @@ public class RootResource extends BaseResource {
 		return request.getRemoteHost();
 	}
 	
-	@Path("/start")
+	@Path("/startBug")
 	@GET
 	public void getStart(@Context HttpServletRequest request) {
 		Worker worker = new Worker();
@@ -141,28 +140,6 @@ public class RootResource extends BaseResource {
 		    	System.err.println("Data load script failed.");
 		    }
 		}
-	}
-	
-	@Path("/number")
-	@GET
-	public String getNumberTweet(@Context HttpServletRequest request) {
-		int counter = 0;
-		
-		String tweetDataTableName = "tweetData";
-		AmazonDynamoDBClient dbClient = new AmazonDynamoDBClient(new ProfileCredentialsProvider());
-		dbClient.setRegion(Regions.EU_WEST_1);
-		DynamoDB dynamoDB = new DynamoDB(dbClient);
-		Table table = dynamoDB.getTable(tweetDataTableName);
-
-		ScanRequest scanRequest = new ScanRequest()
-		    .withTableName(tweetDataTableName);
-
-//		ScanResult result = dbClient.scan(scanRequest);
-//		for (Map<String, AttributeValue> item : result.getItems()){
-//			counter++;
-//		}
-		
-    	return table.getTableName()+ " "+counter;
 	}
 	
 	@Path("/health")
