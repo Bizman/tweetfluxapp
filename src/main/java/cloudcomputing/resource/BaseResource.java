@@ -9,13 +9,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 
 import org.apache.commons.lang.reflect.ConstructorUtils;
 import org.apache.commons.lang.time.StopWatch;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
@@ -66,7 +65,36 @@ public class BaseResource {
 	@Inject
 	AmazonDynamoDB dynamoDb;
 	
+	StopWatch stopWatch = new StopWatch();
+	
 	String tweetDataTableName = "tweetData";
+	
+	Authentication hosebirdAuth = new OAuth1("kd6a5RqpYbo2OzqiW7tsmp9Nd", 
+			"u9wMUAX6tCaVmJ6tAyy9djBjBNjrgZKDv1EMY9t9iHrPTGRBve", 
+			"3010596682-mMFXw3FuVIGHBhCCsHPhRqxE4qtepUptLdgwGnG", 
+			"51kjhqdtQNTReY9usQwCghxkqBhlGbcYp8Rv4Txl3F3lD");
+	
+	BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
+	
+	BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
+	
+	Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
+	
+	StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
+	
+	List<Long> followings = Lists.newArrayList(1234L, 566788L);
+	
+	List<String> terms = Lists.newArrayList("api");
+	
+	ClientBuilder builder = new ClientBuilder()
+	  .name("Hosebird-Client-01")
+	  .hosts(hosebirdHosts)
+	  .authentication(hosebirdAuth)
+	  .endpoint(hosebirdEndpoint)
+	  .processor(new StringDelimitedProcessor(msgQueue))
+	  .eventMessageQueue(eventQueue);
+
+	Client hosebirdClient = builder.build();
 	
 	protected <K extends BaseResource> K createResource(Class<K> clazz, Object... args) throws Exception {
 		if (null != injector.getBinding(clazz))
@@ -90,42 +118,26 @@ public class BaseResource {
 	@GET
 	@Produces("text/plain")
 	@Path("/start")
-	public String start() {
-		int counter = 0;
-		String resultString = "";
-		
-		StopWatch stopWatch = new StopWatch();
+	public void start() {
 		stopWatch.start();
 		ec2.describeInstances();
-		s3.listBuckets();
+		s3.listBuckets();		
 
-		
-		BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
-		BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
-
-		Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
-		StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
-		List<Long> followings = Lists.newArrayList(1234L, 566788L);
-		List<String> terms = Lists.newArrayList("api");
 		hosebirdEndpoint.followings(followings);
 		hosebirdEndpoint.trackTerms(terms);
-
-		Authentication hosebirdAuth = new OAuth1("kd6a5RqpYbo2OzqiW7tsmp9Nd", 
-													"u9wMUAX6tCaVmJ6tAyy9djBjBNjrgZKDv1EMY9t9iHrPTGRBve", 
-													"3010596682-mMFXw3FuVIGHBhCCsHPhRqxE4qtepUptLdgwGnG", 
-													"51kjhqdtQNTReY9usQwCghxkqBhlGbcYp8Rv4Txl3F3lD");
 		
-		ClientBuilder builder = new ClientBuilder()
-		  .name("Hosebird-Client-01")
-		  .hosts(hosebirdHosts)
-		  .authentication(hosebirdAuth)
-		  .endpoint(hosebirdEndpoint)
-		  .processor(new StringDelimitedProcessor(msgQueue))
-		  .eventMessageQueue(eventQueue);
-
-		Client hosebirdClient = builder.build();		
 		hosebirdClient.connect();
+		this.processTweet();
+	
+		hosebirdClient.stop();
+		stopWatch.stop();
 		
+		System.out.println("Scan arrété !");
+	}
+	
+	private void processTweet()
+	{
+		System.out.println("Scan démarré !");
 		while (!hosebirdClient.isDone()) {
 			String msg = null;
 			try {
@@ -133,38 +145,55 @@ public class BaseResource {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			Tweet tweet = treatment(msg);
-			try {
-				Map<String,AttributeValue> item = new HashMap<String, AttributeValue>();
-				item.put("Id", new AttributeValue().withS(tweet.getIdTweet()));
-				item.put("Id_User", new AttributeValue().withS(tweet.getIdUser()));
-				item.put("Coordinates", new AttributeValue().withS(tweet.getCoordinates()));
-				item.put("Date", new AttributeValue().withS(tweet.getDate()));
-				item.put("Lang", new AttributeValue().withS(tweet.getLang()));
-					
-				PutItemRequest putItemRequest = new PutItemRequest("tweetData", item);
-				
-				dynamoDb.putItem(putItemRequest);
-				break;
-		    } catch (AmazonServiceException ase) {
-		    	System.err.println("Data load script failed.");
-		    }
+			this.addTweet(this.treatment(msg));
 		}
-		hosebirdClient.stop();
-			
+	}
+	
+	private void addTweet(Tweet tweet)
+	{
+		Map<String,AttributeValue> item = new HashMap<String, AttributeValue>();
+		item.put("Id", new AttributeValue().withS(tweet.getIdTweet()));
+		item.put("Id_User", new AttributeValue().withS(tweet.getIdUser()));
+		item.put("Coordinates", new AttributeValue().withS(tweet.getCoordinates()));
+		item.put("Date", new AttributeValue().withS(tweet.getDate()));
+		item.put("Lang", new AttributeValue().withS(tweet.getLang()));
+		item.put("Text", new AttributeValue().withS(tweet.getText()));
+		
+		dynamoDb.putItem(new PutItemRequest("tweetData", item));
+	}
+	
+	@Path("/number")
+    @Produces("text/plain")
+    @GET
+    public String getNumber(){
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		ec2.describeInstances();
+		s3.listBuckets();
+		
 		ScanRequest scanRequest = new ScanRequest()
-	    	.withTableName(tweetDataTableName);
-			
+    	.withTableName(tweetDataTableName);
+		
 		ScanResult result = dynamoDb.scan(scanRequest);
-		for (Map<String, AttributeValue> item : result.getItems()){
-			resultString += item.toString();
-			counter++;
-		}	    	
 		
 		stopWatch.stop();
-
-		return "OK: " + dynamoDb.listTables().toString() + "\n" + "Counter : " + counter + "\n" + resultString;
-	}
+		return "Nombre de tweet dans la base : " + dynamoDb.listTables(2).toString() + " est : " 
+				+ result.getCount() + " Tweet(s)";
+    }
+	
+    @Path("/hashtag/{nom}")
+    @Produces("text/plain")
+    @GET
+    public String getHashtagNumber(@PathParam("nom") String hashtageName){
+        
+        ScanRequest scanRequest = new ScanRequest()
+        	.withTableName(tweetDataTableName)
+        	.withFilterExpression("Text CONTAINS hashtageName");
+        
+        ScanResult result = dynamoDb.scan(scanRequest);
+        
+        return hashtageName + " " + result.getCount();
+    }
 	
 	public Tweet treatment(String msg)
 	{
