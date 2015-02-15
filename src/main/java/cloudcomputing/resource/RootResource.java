@@ -81,12 +81,6 @@ public class RootResource extends BaseResource {
 
 		return result;
 	}
-	
-	@Path("/hashtag")
-	@GET
-	public String getHashtag(@Context HttpHeaders httpHeaders) {
-		return "coucou tout le monde Olivier/Eric !";
-	}
 
 	@Path("/remote")
 	@GET
@@ -94,67 +88,8 @@ public class RootResource extends BaseResource {
 		return request.getRemoteHost();
 	}
 	
-	@Path("/startBug")
-	@GET
-	public void getStart(@Context HttpServletRequest request) {
-		Worker worker = new Worker();
-		
-		BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
-		BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
-
-		Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
-		StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
-		List<Long> followings = Lists.newArrayList(1234L, 566788L);
-		List<String> terms = Lists.newArrayList("api");
-		hosebirdEndpoint.followings(followings);
-		hosebirdEndpoint.trackTerms(terms);
-
-		Authentication hosebirdAuth = new OAuth1("kd6a5RqpYbo2OzqiW7tsmp9Nd", 
-													"u9wMUAX6tCaVmJ6tAyy9djBjBNjrgZKDv1EMY9t9iHrPTGRBve", 
-													"3010596682-mMFXw3FuVIGHBhCCsHPhRqxE4qtepUptLdgwGnG", 
-													"51kjhqdtQNTReY9usQwCghxkqBhlGbcYp8Rv4Txl3F3lD");
-		
-		ClientBuilder builder = new ClientBuilder()
-		  .name("Hosebird-Client-01")
-		  .hosts(hosebirdHosts)
-		  .authentication(hosebirdAuth)
-		  .endpoint(hosebirdEndpoint)
-		  .processor(new StringDelimitedProcessor(msgQueue))
-		  .eventMessageQueue(eventQueue);
-
-		Client hosebirdClient = builder.build();		
-		hosebirdClient.connect();
-		
-		while (!hosebirdClient.isDone()) {
-			String msg = null;
-			try {
-				msg = msgQueue.take();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			Tweet tweet = worker.treatment(msg);
-			try {
-				System.out.println("Ajout du tweet en base");
-				worker.loadSampleProducts(tweet);
-		    } catch (AmazonServiceException ase) {
-		    	System.err.println("Data load script failed.");
-		    }
-		}
-	}
-	
 	@Path("/health")
 	public HealthResource getHealthResource() throws Exception {
 		return super.createResource(HealthResource.class);
 	}
-	
-	@Path("/carto/{coordinate}/{hashtag}")
-	@GET
-	public String getCartographie(){return null;}
-	
-	@Path("/ddd")
-	@DELETE
-	public void deletCartographie(){}
-	
-
-
 }

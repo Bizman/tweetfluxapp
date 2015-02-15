@@ -12,11 +12,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
+import org.apache.commons.collections.comparators.ComparableComparator;
 import org.apache.commons.lang.reflect.ConstructorUtils;
 import org.apache.commons.lang.time.StopWatch;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
@@ -177,22 +179,30 @@ public class BaseResource {
 		ScanResult result = dynamoDb.scan(scanRequest);
 		
 		stopWatch.stop();
-		return "Nombre de tweet dans la base : " + dynamoDb.listTables(2).toString() + " est : " 
-				+ result.getCount() + " Tweet(s)";
+		
+		return "Il y a " + result.getCount() + " Tweet(s) dans la base.";
     }
 	
-    @Path("/hashtag/{nom}")
+    @Path("/lang/{lang}")
     @Produces("text/plain")
     @GET
-    public String getHashtagNumber(@PathParam("nom") String hashtageName){
+    public String getTweetByLang(@PathParam("lang") String lang){
+        String resultItem = "";
+        
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<String, AttributeValue>();
+        expressionAttributeValues.put(":lang", new AttributeValue().withS("\"en\""));
         
         ScanRequest scanRequest = new ScanRequest()
         	.withTableName(tweetDataTableName)
-        	.withFilterExpression("Text CONTAINS hashtageName");
-        
+        	.withFilterExpression("Lang = :lang")
+        	.withProjectionExpression("Id")
+        	.withExpressionAttributeValues(expressionAttributeValues);
+       
         ScanResult result = dynamoDb.scan(scanRequest);
-        
-        return hashtageName + " " + result.getCount();
+        for(Map<String,AttributeValue> item : result.getItems()) {
+        	resultItem += item.toString() + "\n";
+        }
+        return "Le nombre de Tweets en " + lang + " est de : " + result.getCount() + "\n" + resultItem;
     }
 	
 	public Tweet treatment(String msg)
