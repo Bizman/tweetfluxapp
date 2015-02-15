@@ -202,7 +202,7 @@ public class BaseResource {
         for(Map<String,AttributeValue> item : result.getItems()) {
         	resultItem += item.toString() + "\n";
         }
-        return "Le nombre de Tweets en " + lang + " est de : " + result.getCount() + "\n" + resultItem;
+        return "Le nombre de Tweets en \"" + lang + "\" est de : " + result.getCount() + "\n" + resultItem;
     }
 	
 	public Tweet treatment(String msg)
